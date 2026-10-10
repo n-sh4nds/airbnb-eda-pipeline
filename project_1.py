@@ -4,7 +4,6 @@
 # Description: This program prepares a CSV file (airbnb.csv) for modeling so that we can predict the price per night of an Airbnb rental based on the factors available in the dataset.
 
 import pandas as pd
-import numpy as np
 from scipy import stats
 
 def main():
@@ -68,9 +67,14 @@ def main():
     airbnb_df[whole_num_values] = airbnb_df[whole_num_values].apply(
         pd.to_numeric, errors="coerce").astype("Int64") # convert values of columns within whole_num_values to Int64
 
-    invalid_availability = (airbnb_df["yearly_availability"] >= 366) # assign an "invalid" label to all invalid values of 366 or higher (because a year consists of 365 days)
+    invalid_availability = (
+        (airbnb_df["yearly_availability"] >= 366)
+        | (airbnb_df["yearly_availability"] < 0)
+    ) # assign an "invalid" label to all invalid values of 366 or higher (because a year consists of 365 days)
 
     invalid_count = int(invalid_availability.sum()) # count all invalid values
+
+    airbnb_df.loc[invalid_availability.fillna(False), "yearly_availability"] = pd.NA #
 
     airbnb_df["review_rate_z"] = stats.zscore( # calculate z-scores for review_rate column
         airbnb_df["review_rate"],
@@ -132,7 +136,7 @@ def main():
     print("\nHost Listings Count Outliers:", len(host_listings_outliers))
     print(host_listings_outliers[["host_listings_count", "host_listings_count_z"]])
 
-    print("\nYearly Availibility: ")
+    print("\nYearly Availability: ")
     print(airbnb_df["yearly_availability"])
     print("\n\tTotal invalid values for yearly availability:", invalid_count)
 
